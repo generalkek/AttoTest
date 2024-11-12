@@ -8,6 +8,8 @@ namespace soc {
 
 #ifdef WIN32 
 #include "socket_win_inl.h"
+#elif __linux
+#include "socket_linux_inl.h"
 #endif
 
 namespace soc {
@@ -84,7 +86,7 @@ namespace soc {
 	bool Socket::listen()
 	{
 		if (m_role != SocketRole::Listener) {
-			printf_s("Sender socket trying to listen.");
+			printf("Sender socket trying to listen.");
 			return false;
 		}
 		return m_imp->listen();

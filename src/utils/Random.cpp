@@ -3,7 +3,7 @@
 
 #include <time.h>
 #include <stdint.h>
-#include <vcruntime_string.h>
+#include <cstring>
 
 /* Period parameters */
 #define CMATH_N 624

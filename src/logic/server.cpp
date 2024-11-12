@@ -53,13 +53,13 @@ void Server::start(int numberOfReceivers)
 {
 	// create sliding window, basically array and init
 	if (!m_sw.init(16)) {
-		printf_s("Failed to initialize sliding window, aborting.\n");
+		printf("Failed to initialize sliding window, aborting.\n");
 		return;
 	}
 	
 	// create message countainer with number of pages = threads * 2
 	if (!m_msgCont.init(numberOfReceivers, 1024)) {
-		printf_s("Failed to initialize message container, aborting.\n");
+		printf("Failed to initialize message container, aborting.\n");
 		return;
 	}
 
@@ -152,8 +152,8 @@ void Server::DataReceiver::operator()()
 		}
 
 		std::string smsg{ data::toString(msg) };
-		printf_s("Received packet size: %d, threadId: %d\n", received, m_id);
-		printf_s("%s\n", smsg.c_str());
+		printf("Received packet size: %d, threadId: %d\n", received, m_id);
+		printf("%s\n", smsg.c_str());
 		
 		m_server->m_msgCont.insert(m_id, msg);
 		m_server->m_lastPacketTimestamp.reset();
@@ -224,6 +224,6 @@ void Server::DataSender::operator()()
 		}
 
 		std::string smsg{ data::toString(msg) };
-		printf_s("Sending message: %s\n", smsg.c_str());
+		printf("Sending message: %s\n", smsg.c_str());
 	}
 }

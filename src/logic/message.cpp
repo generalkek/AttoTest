@@ -1,7 +1,13 @@
 #include "message.h"
 
 #include <stddef.h> // offsetof
+#include <cstring>
 #include <sstream>
+#ifdef __linux
+#include <backward/hash_fun.h>
+#else
+#include <xhash>
+#endif
 
 void data::SerialiseMessage(char* outBuf, message* inMsg)
 {
@@ -15,7 +21,7 @@ void data::SerialiseMessage(char* outBuf, message* inMsg)
 	stream.write(src, sizeof(inMsg->MessageId));
 	src = base + offsetof(message, MessageData);
 	stream.write(src, sizeof(inMsg->MessageData));
-	memcpy_s(outBuf, sizeof(message), stream.str().c_str(), stream.str().length());
+	memcpy(outBuf, stream.str().c_str(), stream.str().length());
 }
 
 void data::DeserialiseMessage(char* inBuf, message* outMsg)
@@ -43,7 +49,14 @@ std::string data::toString(const message& msg)
 	return stream.str();
 }
 
+size_t data::MessageHasher::operator()(const uint64_t& _Keyval) const noexcept
+{
+	auto h = std::hash<unsigned long long>();
+	return h(_Keyval);
+}
+
 size_t data::MessageHasher::operator()(const argument_type& _Keyval) const noexcept
 {
-	return std::_Hash_representation(_Keyval.MessageId);
+	auto h = std::hash<decltype(_Keyval.MessageId)>();
+	return h(_Keyval.MessageId);
 }

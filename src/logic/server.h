@@ -1,6 +1,10 @@
 #pragma once
 
+#include <cstring>
+#include <functional>
 #include "message.h"
+
+
 #include "../containers/slidingWindow.h"
 #include "../containers/pagedTable.h"
 #include "../containers/queue.h"
@@ -17,7 +21,7 @@ public:
 	using SLock = sync::spinlock;
 	using MsgId = data::MsgId;
 	using SW = cont::SlidingWindow;
-	using MsgCont = cont::PagedTable<data::message, data::MessageHasher>;
+	using MsgCont = cont::PagedTable<data::message, data::MessageHasher, data::MessageKey, std::equal_to<uint64_t>>;
 	using Queue = cont::Queue<data::message>;
 	using Timer = utils::Timer;
 private:
