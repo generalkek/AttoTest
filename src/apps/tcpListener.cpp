@@ -23,7 +23,7 @@ int main() {
 					data::message msg{};
 					data::DeserialiseMessage(buf, &msg);
 					std::string smsg{ data::toString(msg) };
-					printf_s("Recieved: %d, Data: %s\n", receivedBytes, smsg.c_str());
+					printf("Recieved: %d, Data: %s\n", receivedBytes, smsg.c_str());
 				}
 			}
 			newConnection->shutdown();

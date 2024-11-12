@@ -1,14 +1,15 @@
 #pragma once
 
-#include <vcruntime_string.h> // memset
+#include <cstring> // memset
 #include <type_traits>
 
 namespace cont {
 
 	template <
 		typename Type, 
-		typename Hasher
-		//typename Equality,
+		typename Hasher,
+		typename KeyFunc,
+		typename Equality
 		/*std::enable_if_t<std::conjunction_v<
 			std::_Invoke_traits<Hasher>::_Is_invocable_r,
 			std::is_same<std::_Invoke_traits<Hasher>::type, std::size_t(const Type&)>
@@ -22,6 +23,8 @@ namespace cont {
 		using reference = Type&;
 		using const_reference = const Type&;
 		using hash = Hasher;
+		using key = KeyFunc;
+		using equal = Equality;
 
 		static const unsigned int s_null = 0xffffffff;
 		static const unsigned int s_tombstone = 0xfffffffe;
@@ -93,7 +96,7 @@ namespace cont {
 				*ptr = Type{val};
 				m_size++;
 			}
-			return *;
+			return *ptr;
 		}
 
 		float loadFactor()
@@ -120,7 +123,7 @@ namespace cont {
 
 		pointer _get(const_reference val)
 		{
-			auto idx = index(val);
+			auto idx = index(m_key(val));
 			pointer target = m_table + idx;
 			if (_isNull(target) || _isDeleted(target)) {
 				return target;
@@ -131,7 +134,8 @@ namespace cont {
 					return target;
 				}
 
-				if (target->MessageId == val.MessageId) {
+				//if (target->MessageId == val.MessageId) {
+				if (m_equal(m_key(*target), m_key(val))) {
 					return target;
 				}
 			
@@ -142,18 +146,20 @@ namespace cont {
 			return target;
 		}
 
-		std::size_t index(const_reference  val)
+		std::size_t index(const std::size_t  val)
 		{
 			return m_hasher(val) & m_maxSize - 1;
 		}
 
 		std::size_t helperIndex(const std::size_t val)
 		{
-			return std::_Hash_representation(val) & m_maxSize - 1;
+			return m_hasher(val) & m_maxSize - 1;
 		}
 
 	private:
 		hash m_hasher;
+		key m_key;
+		equal m_equal;
 		pointer m_table;
 		std::size_t m_size;
 		std::size_t m_maxSize;

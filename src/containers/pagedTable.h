@@ -4,7 +4,7 @@
 #include "hashTable.h"
 
 namespace cont {
-	template <typename Type, typename Hasher>
+	template <typename Type, typename Hasher, typename KeyFunc, typename Equality>
 	class PagedTable {
 	public:
 		PagedTable()
@@ -33,7 +33,7 @@ namespace cont {
 
 
 	public:
-		using Table = HashTable<Type, Hasher>;
+		using Table = HashTable<Type, Hasher, KeyFunc, Equality>;
 
 		bool init(int numberOfPages, int pageSize)
 		{
@@ -68,7 +68,6 @@ namespace cont {
 			t.insert(val);
 			if (t.loadFactor() > 0.8) {
 
-				printf_s("Load factor %f", t.loadFactor());
 				// if we are here it means that table is full
 				// and we can pass it to another thread which persists it somewhere
 				// by simply placing table index in the queue and notifying cond_var
@@ -93,7 +92,7 @@ namespace cont {
 			return false;
 		}
 
-		Type* get(int key)
+		Type* get(const Type& val)
 		{
 			for (int i = 0; i < m_numberOfPages; ++i) {
 				sync::lock_guard lock{ m_pageLocks[i] };

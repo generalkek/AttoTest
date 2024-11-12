@@ -63,7 +63,7 @@ int main() {
 	}
 
 	Client c{};
-	c.start(2, 100);
+	c.start(2, 1000);
 	system("pause");
 	soc::shutdownSocLib();
 	return 0;
@@ -174,7 +174,7 @@ void Client::DataSender::operator()()
 		++m_packSinceDup;
 
 		std::string smsg{ data::toString(msg) };
-		printf_s("Sent: %s\n", smsg.c_str());
+		printf("Sent: %s\n", smsg.c_str());
 		std::this_thread::sleep_for(std::chrono::milliseconds(2));
 		// move packet counter here
 	}

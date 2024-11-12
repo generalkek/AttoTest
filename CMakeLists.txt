@@ -50,4 +50,15 @@ if(WIN32)
         Ws2_32.lib
         Mswsock.lib
     )
+
+elseif(LINUX)
+    target_link_libraries(AttoTest PRIVATE
+        libstdc++.so.6
+        )
+    target_link_libraries(AttoUDPSend PRIVATE
+        libstdc++.so.6
+        )
+    target_link_libraries(AttoTCPListen PRIVATE
+        libstdc++.so.6
+        )
 endif()
