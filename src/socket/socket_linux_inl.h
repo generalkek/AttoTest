@@ -19,7 +19,7 @@
 
 namespace soc {
 static bool s_winSockInitialized = false;
-	bool initSocLibImpl() {
+	bool initSocLib() {
 		if (s_winSockInitialized) {
 			return true;
 		}
@@ -27,7 +27,7 @@ static bool s_winSockInitialized = false;
 		return true;
 	}
 
-	void shutdownSocLibImlp() {}
+	void shutdownSocLib() {}
 
 	class Socket::Impl {
 	public:
@@ -74,7 +74,7 @@ static bool s_winSockInitialized = false;
         int socType = type == SocketType::TCP ? SOCK_STREAM : SOCK_DGRAM;
         m_socket = socket(AF_INET, socType, 0);
         if (m_socket == INVALID_SOCKET) {
-			//printf_s("Failed to create socket. Error: %d\n", WSAGetLastError());
+			LOG_ERROR("Failed to create socket. Error: %d", errno);
 			return false;
 		}
         
@@ -85,7 +85,6 @@ static bool s_winSockInitialized = false;
 		m_sockaddr.sin_port = htons(port);
 		m_sockaddr.sin_addr.s_addr = isSender ? inet_addr(defaultIp) : INADDR_ANY;
 		
-//		printf_s("[INFO]""Successfully created socket. " __FUNCTION__ " line:%d\n", __LINE__);
 		if (!m_isBlocking) {
             int flags = fcntl(m_socket, F_GETFL, 0);
             if (flags == -1) {
@@ -94,7 +93,7 @@ static bool s_winSockInitialized = false;
             flags |= O_NONBLOCK;
             int setBlockRes = fcntl(m_socket, F_SETFL, flags);
             if (setBlockRes != 0) {
-                //printf_s("Failed to set non-blocking mode for socket. Port: %d", port);
+				LOG_ERROR("Failed to set non-blocking mode for socket. Port: %d, error: %d", port, errno);
 				return false;
             }
 		}
@@ -117,12 +116,12 @@ static bool s_winSockInitialized = false;
 			if (result < 0) {
 				lastError = errno;
 				if (lastError != EINPROGRESS && lastError != EALREADY) {
-					//printf_s("Failed to connect to the server. Error: %d\n", lastError);
+					LOG_ERROR("Failed to connect to the server. Error: %d", lastError);
 					return false;
 				}
 
 				if (m_timer.hasPassed<utils::millis>(5000)) {
-					//printf_s("Failed to connect, no response from server.");
+					LOG_ERROR("Failed to connect, no response from server.");
 					return false;
 				}
 			}
@@ -135,7 +134,7 @@ static bool s_winSockInitialized = false;
 	{
 		int result = ::shutdown(m_socket, role == SocketRole::Sender ? SHUT_WR : SHUT_RD);
 		if (result < 0) {
-			//printf_s("Failed to shutdown connection. Error: %d\n", errno);
+			LOG_ERROR("Failed to shutdown connection. Error: %d", errno);
 			return false;
 		}
 		return true;
@@ -145,7 +144,7 @@ static bool s_winSockInitialized = false;
 	{
 		int result = ::bind(m_socket, reinterpret_cast<sockaddr*>(&m_sockaddr), sizeof(sockaddr));
 		if (result < 0) {
-			printf("Bind failed. Error: %d", errno);
+			LOG_ERROR("Bind failed. Error: %d", errno);
 			return false;
 		}
 		return true;
@@ -155,7 +154,7 @@ static bool s_winSockInitialized = false;
 	{
 		int result = ::listen(m_socket, SOMAXCONN);
 		if (result < 0) {
-			printf("Listen failed. Error: %d", errno);
+			LOG_ERROR("Listen failed. Error: %d", errno);
 			return false;
 		}
 		return true;
@@ -171,7 +170,7 @@ static bool s_winSockInitialized = false;
 			if (result == INVALID_SOCKET) {
 				lastError = errno;
 				if (lastError != EWOULDBLOCK) {
-					printf("Failed to accept new connection. Error: %d", lastError);
+					LOG_ERROR("Failed to accept new connection. Error: %d", lastError);
 					return nullptr;
 				}
 				if (m_timer.hasPassed<utils::millis>(timeoutMs)) {
@@ -206,7 +205,7 @@ static bool s_winSockInitialized = false;
 			if (result < 0) {
 				lastError = errno;
 				if (lastError != EWOULDBLOCK) {
-					printf("Failed to receive packet. Error: %d\n", errno);
+					LOG_ERROR("Failed to receive packet. Error: %d\n", errno);
 					return 0;
 				}
 				if (m_timer.hasPassed<utils::millis>(s_defaultTimeoutMs)) {
@@ -226,7 +225,7 @@ static bool s_winSockInitialized = false;
 	{
 		int result = ::sendto(m_socket, buf, bufLength, 0, reinterpret_cast<sockaddr*>(&m_sockaddr), sizeof(sockaddr));
 		if (result < 0) {
-			printf("Failed to send packet. Error: %d\n", errno);
+			LOG_ERROR("Failed to send packet. Error: %d\n", errno);
 			return 0;
 		}
 		return result;

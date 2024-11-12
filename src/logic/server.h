@@ -13,7 +13,7 @@
 
 class Server {
 public:
-	Server();
+	Server(int tv);
 	~Server();
 
 	void start(int numberOfReceivers);
@@ -35,12 +35,10 @@ private:
 	
 	MsgCont m_msgCont;
 
+	int m_targetVal;
 	SLock m_tcpQueueLock;
 	Queue m_tcpQueue;
 	
-	// atomic packet received
 	int m_dupesDiscarded;
 	Timer m_lastPacketTimestamp;
-	// atomic packet sent
-
 };

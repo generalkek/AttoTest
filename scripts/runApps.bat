@@ -1,3 +1,3 @@
-start "Server" "../build/bin/Debug/AttoTest.exe"
-start "UDPSender" "../build/bin/Debug/AttoUDPSend.exe"
-start "TCPListener" "../build/bin/Debug/AttoTCPListen.exe"
+start "TCPListener" "../build/testApps/AttoTCPListen.exe"
+start "Server" "../build/testApps/AttoTest.exe" "-t 10" 
+start "UDPSender" "../build/testApps/AttoUDPSend.exe" "-t 10 -ps 100"

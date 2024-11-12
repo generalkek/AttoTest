@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "message.h"
+#include "../utils/log.h"
 #include "../socket/socket.h"
 
 using SocPtr = std::unique_ptr<soc::Socket>;
@@ -38,10 +39,12 @@ struct Server::DataSender {
 	void operator()();
 };
 
-Server::Server()
+
+Server::Server(int tv)
 {
 	m_run = 0;
 	m_dupesDiscarded = 0;
+	m_targetVal = tv;
 }
 
 Server::~Server()
@@ -53,13 +56,13 @@ void Server::start(int numberOfReceivers)
 {
 	// create sliding window, basically array and init
 	if (!m_sw.init(16)) {
-		printf("Failed to initialize sliding window, aborting.\n");
+		LOG_ERROR("Failed to initialize sliding window, aborting.");
 		return;
 	}
 	
 	// create message countainer with number of pages = threads * 2
 	if (!m_msgCont.init(numberOfReceivers, 1024)) {
-		printf("Failed to initialize message container, aborting.\n");
+		LOG_ERROR("Failed to initialize message container, aborting.");
 		return;
 	}
 
@@ -92,6 +95,9 @@ void Server::start(int numberOfReceivers)
 	}
 	m_run = 0;
 	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	LOG_INFO("Shutdown server.");
+	LOG_INFO("Duplicates discarded: %d.", m_dupesDiscarded);
+
 }
 
 
@@ -152,19 +158,18 @@ void Server::DataReceiver::operator()()
 		}
 
 		std::string smsg{ data::toString(msg) };
-		printf("Received packet size: %d, threadId: %d\n", received, m_id);
-		printf("%s\n", smsg.c_str());
+		LOG_DEBUG("Received packet size: %d, threadId: %d", received, m_id);
+		LOG_DEBUG("%s", smsg.c_str());
 		
 		m_server->m_msgCont.insert(m_id, msg);
 		m_server->m_lastPacketTimestamp.reset();
 
-		if (msg.MessageData == 10) {
+		if (msg.MessageData == m_server->m_targetVal) {
 			sync::lock_guard lock{ m_server->m_tcpQueueLock };
 			m_server->m_tcpQueue.push(msg);
 		}
 	}
 }
-
 
 // Data Sender
 Server::DataSender::DataSender(Server* s, SocPtr ptr, int id)
@@ -224,6 +229,6 @@ void Server::DataSender::operator()()
 		}
 
 		std::string smsg{ data::toString(msg) };
-		printf("Sending message: %s\n", smsg.c_str());
+		LOG_DEBUG("Sending message: %s", smsg.c_str());
 	}
 }

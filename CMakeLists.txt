@@ -51,6 +51,14 @@ if(WIN32)
         Mswsock.lib
     )
 
+    add_custom_command(TARGET AttoTest
+        POST_BUILD
+        COMMAND ${CMAKE_BINARY_DIR}/../scripts/postBuild.bat "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$(Configuration)/*.exe"
+    )
+
+    target_compile_options(AttoTest PRIVATE /Qpar /MP)
+    target_compile_options(AttoUDPSend PRIVATE /Qpar /MP)
+    target_compile_options(AttoTCPListen PRIVATE /Qpar /MP)
 elseif(LINUX)
     target_link_libraries(AttoTest PRIVATE
         libstdc++.so.6

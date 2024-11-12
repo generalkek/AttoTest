@@ -14,7 +14,7 @@
 namespace soc {
 
 	static bool s_winSockInitialized = false;
-	bool initSocLibImpl() {
+	bool initSocLib() {
 		if (s_winSockInitialized) {
 			return true;
 		}
@@ -22,14 +22,14 @@ namespace soc {
 		WSADATA wsaData;
 		int res = WSAStartup(MAKEWORD(2, 2), &wsaData);
 		if (res != 0) {
-			printf_s("WSAStartup failed. Error: %d\n", res);
+			LOG_ERROR("WSAStartup failed. Error: %d", res);
 			return false;
 		}
 		s_winSockInitialized = true;
 		return true;
 	}
 
-	void shutdownSocLibImlp() {
+	void shutdownSocLib() {
 		WSACleanup();
 	}
 
@@ -94,13 +94,13 @@ namespace soc {
 
 		int result = getaddrinfo(ipPtr, sport.c_str(), &hints, &addrInfo);
 		if (result != 0) {
-			printf_s("Failed to get socket address, port: %d, error: %d\n", port, result);
+			LOG_ERROR("Failed to get socket address, port: %d, error: %d", port, result);
 			return false;
 		}
 
 		m_socket = socket(addrInfo->ai_family, addrInfo->ai_socktype, addrInfo->ai_protocol);
 		if (m_socket == INVALID_SOCKET) {
-			printf_s("Failed to create socket. Error: %d\n", WSAGetLastError());
+			LOG_ERROR("Failed to create socket. Error: %d", WSAGetLastError());
 			freeaddrinfo(addrInfo);
 			return false;
 		}
@@ -109,16 +109,15 @@ namespace soc {
 		freeaddrinfo(addrInfo);
 
 		if (!m_sockaddr) {
-			printf_s("[ERROR]""Failed to allocate memory for sockaddr.\n" );
+			LOG_ERROR("Failed to allocate memory for sockaddr.");
 			return false;
 		}
 
-		printf_s("[INFO]""Successfully created socket. " __FUNCTION__ " line:%d\n", __LINE__);
 		if (!m_isBlocking) {
 			u_long mode = 1;
 			result = ioctlsocket(m_socket, FIONBIO, &mode);
 			if (result != 0) {
-				printf_s("Failed to set non-blocking mode for socket. Port: %d, error: %d", port, WSAGetLastError());
+				LOG_ERROR("Failed to set non-blocking mode for socket. Port: %d, error: %d", port, WSAGetLastError());
 				return false;
 			}
 		}
@@ -140,12 +139,16 @@ namespace soc {
 			if (result == SOCKET_ERROR) {
 				lastError = WSAGetLastError();
 				if (lastError != WSAEWOULDBLOCK && lastError != WSAEALREADY) {
-					printf_s("Failed to connect to the server. Error: %d\n", lastError);
+					if (lastError == WSAEISCONN) {
+						return true;
+					}
+
+					LOG_ERROR("Failed to connect to the server. Error: %d", lastError);
 					return false;
 				}
 
 				if (m_timer.hasPassed<utils::millis>(5000)) {
-					printf_s("Failed to connect, no response from server.");
+					LOG_ERROR("Failed to connect, no response from server.");
 					return false;
 				}
 			}
@@ -158,7 +161,7 @@ namespace soc {
 	{
 		int result = ::shutdown(m_socket, role == SocketRole::Sender ? SD_SEND : SD_RECEIVE);
 		if (result == SOCKET_ERROR) {
-			printf_s("Failed to shutdown connection. Error: %d\n", WSAGetLastError());
+			LOG_ERROR("Failed to shutdown connection. Error: %d\n", WSAGetLastError());
 			return false;
 		}
 		return true;
@@ -168,7 +171,7 @@ namespace soc {
 	{
 		int result = ::bind(m_socket, m_sockaddr, m_addrlen);
 		if (result == SOCKET_ERROR) {
-			printf_s("Bind failed. Error: %d", WSAGetLastError());
+			LOG_ERROR("Bind failed. Error: %d", WSAGetLastError());
 			return false;
 		}
 		return true;
@@ -178,7 +181,7 @@ namespace soc {
 	{
 		int result = ::listen(m_socket, SOMAXCONN);
 		if (result == SOCKET_ERROR) {
-			printf_s("Listen failed. Error: %d", WSAGetLastError());
+			LOG_ERROR("Listen failed. Error: %d", WSAGetLastError());
 			return false;
 		}
 		return true;
@@ -194,7 +197,7 @@ namespace soc {
 			if (result == INVALID_SOCKET) {
 				lastError = WSAGetLastError();
 				if (lastError != WSAEWOULDBLOCK) {
-					printf_s("Failed to accept new connection. Error: %d", lastError);
+					LOG_ERROR("Failed to accept new connection. Error: %d", lastError);
 					return nullptr;
 				}
 				if (m_timer.hasPassed<utils::millis>(timeoutMs)) {
@@ -213,7 +216,7 @@ namespace soc {
 			u_long mode = 1;
 			result = ioctlsocket(mySocRes->m_socket, FIONBIO, &mode);
 			if (result != 0) {
-				printf_s("Failed to set non-blocking mode for accepted socket. Error: %d\n", WSAGetLastError());
+				LOG_ERROR("Failed to set non-blocking mode for accepted socket. Error: %d\n", WSAGetLastError());
 				return false;
 			}
 		}
@@ -231,7 +234,7 @@ namespace soc {
 			if (result == SOCKET_ERROR) {
 				lastError = WSAGetLastError();
 				if (lastError != WSAEWOULDBLOCK) {
-					printf_s("Failed to receive packet. Error: %d\n", WSAGetLastError());
+					LOG_ERROR("Failed to receive packet. Error: %d\n", WSAGetLastError());
 					return 0;
 				}
 				if (m_timer.hasPassed<utils::millis>(s_defaultTimeoutMs)) {
@@ -251,7 +254,7 @@ namespace soc {
 	{
 		int result = ::sendto(m_socket, buf, bufLength, 0, m_sockaddr, m_addrlen);
 		if (result == SOCKET_ERROR) {
-			printf_s("Failed to send packet. Error: %d\n", WSAGetLastError());
+			LOG_ERROR("Failed to send packet. Error: %d\n", WSAGetLastError());
 			return 0;
 		}
 		return result;

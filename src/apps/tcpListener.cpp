@@ -1,4 +1,5 @@
-#include <stdio.h>
+
+#include "../utils/log.h"
 #include "../socket/socket.h"
 #include "../logic/message.h"
 
@@ -23,7 +24,7 @@ int main() {
 					data::message msg{};
 					data::DeserialiseMessage(buf, &msg);
 					std::string smsg{ data::toString(msg) };
-					printf("Recieved: %d, Data: %s\n", receivedBytes, smsg.c_str());
+					LOG_INFO("Recieved: %d, Data: %s\n", receivedBytes, smsg.c_str());
 				}
 			}
 			newConnection->shutdown();
