@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 
+#include <cstring>
 #include <stdlib.h>
 
 #include "../utils/misc.h"
@@ -134,7 +135,8 @@ void Client::start(int numberOfSenders, int maxPacketToSend)
 		std::this_thread::sleep_for(std::chrono::milliseconds(500));
 	}
 	m_run = 0;
-	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	LOG_INFO("All messages delivered.");
+	std::this_thread::sleep_for(std::chrono::seconds(15));
 }
 
 Client::DataSender::DataSender(Client* c, SocPtr ptr)

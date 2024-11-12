@@ -69,4 +69,16 @@ elseif(LINUX)
     target_link_libraries(AttoTCPListen PRIVATE
         libstdc++.so.6
         )
+
+    target_compile_definitions(AttoTest PRIVATE
+        $<$<CONFIG:Release>:NDEBUG=1>
+    )
+
+    target_compile_definitions(AttoUDPSend PRIVATE
+        $<$<CONFIG:Release>:NDEBUG=1>
+    )
+
+    target_compile_definitions(AttoTCPListen PRIVATE
+        $<$<CONFIG:Release>:NDEBUG=1>
+    )
 endif()
