@@ -21,7 +21,7 @@ public:
 	using SLock = sync::spinlock;
 	using MsgId = data::MsgId;
 	using SW = cont::SlidingWindow;
-	using MsgCont = cont::PagedTable<data::message, data::MessageHasher, data::MessageKey, std::equal_to<uint64_t>>;
+	using MsgCont = cont::PagedTable<data::message, MsgId, data::MessageHasher, data::MessageKey, std::equal_to<MsgId>>;
 	using Queue = cont::Queue<data::message>;
 	using Timer = utils::Timer;
 private:

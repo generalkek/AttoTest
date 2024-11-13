@@ -7,13 +7,10 @@ namespace cont {
 
 	template <
 		typename Type, 
+		typename KeyType,
 		typename Hasher,
 		typename KeyFunc,
 		typename Equality
-		/*std::enable_if_t<std::conjunction_v<
-			std::_Invoke_traits<Hasher>::_Is_invocable_r,
-			std::is_same<std::_Invoke_traits<Hasher>::type, std::size_t(const Type&)>
-		>, int> = 0*/
 	>
 	class HashTable
 	{
@@ -64,7 +61,7 @@ namespace cont {
 
 		void insert(const_reference val)
 		{
-			pointer target = _get(val);
+			pointer target = _getFreeOrMe(val);
 			if (_isNull(target) || _isDeleted(target)) {
 				m_size++;
 			}
@@ -72,31 +69,26 @@ namespace cont {
 		}
 
 
-		bool has(const_reference val)
+		bool has(KeyType val)
 		{
-			pointer ptr = _get(val);
-			return !_isNull(ptr) && !_isDeleted(ptr);
+			return _find(val) != nullptr;
 		}
 
-		void erase(const_reference val)
+		bool erase(const_reference val)
 		{
-			if (!has(val)) {
-				return;
+			if (!has(m_key(val))) {
+				return false;
 			}
 
-			pointer p = _get(val);
+			pointer p = _find(m_key(val));
 			_markDeleted(p);
 			m_size--;
+			return true;
 		}
 
-		reference get(const_reference val)
+		pointer get(KeyType val)
 		{
-			pointer ptr = _get(val);
-			if (_isNull(ptr) && !_isDeleted(ptr)) {
-				*ptr = Type{val};
-				m_size++;
-			}
-			return *ptr;
+			return _find(val);
 		}
 
 		float loadFactor()
@@ -121,7 +113,7 @@ namespace cont {
 			return *reinterpret_cast<unsigned int*>(p) == s_tombstone;
 		}
 
-		pointer _get(const_reference val)
+		pointer _getFreeOrMe(const_reference val)
 		{
 			auto idx = index(m_key(val));
 			pointer target = m_table + idx;
@@ -139,19 +131,47 @@ namespace cont {
 					return target;
 				}
 			
-				idx = helperIndex(idx + i);
+				idx = index(idx + i);
 				target = m_table + idx;
 			}
 
 			return target;
 		}
 
-		std::size_t index(const std::size_t  val)
+		pointer _find(const KeyType& val)
 		{
-			return m_hasher(val) & m_maxSize - 1;
+			auto idx = index(val);
+			pointer target = m_table + idx;
+
+			if (_isNull(target)) {
+				return nullptr;
+			}
+
+			if (!_isDeleted(target) && m_equal(val, m_key(*target))) {
+				return target;
+			}
+
+			for (int i = 1; i < m_maxSize; ++i) {
+				auto idx_ = index(idx + i);
+				target = m_table + idx_;
+
+				if (_isNull(target)) {
+					return nullptr;
+				}
+
+				if (_isDeleted(target)) {
+					continue;
+				}
+
+				if (m_equal(val, m_key(*target))) {
+					return target;
+				}
+			}
+
+			return nullptr;
 		}
 
-		std::size_t helperIndex(const std::size_t val)
+		std::size_t index(const std::size_t  val)
 		{
 			return m_hasher(val) & m_maxSize - 1;
 		}

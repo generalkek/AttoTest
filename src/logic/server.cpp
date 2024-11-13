@@ -96,8 +96,14 @@ void Server::start(int numberOfReceivers)
 	m_run = 0;
 	LOG_INFO("Shutdown server.");
 	LOG_INFO("Duplicates discarded: %d.", m_dupesDiscarded);
-	std::this_thread::sleep_for(std::chrono::seconds(10));
 
+
+	auto msg = m_msgCont.get(122);
+	m_msgCont.remove(*msg);
+	msg = m_msgCont.get(122);
+	
+	
+	std::this_thread::sleep_for(std::chrono::seconds(10));
 }
 
 

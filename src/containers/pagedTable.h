@@ -4,7 +4,7 @@
 #include "hashTable.h"
 
 namespace cont {
-	template <typename Type, typename Hasher, typename KeyFunc, typename Equality>
+	template <typename Type, typename Key, typename Hasher, typename KeyFunc, typename Equality>
 	class PagedTable {
 	public:
 		PagedTable()
@@ -33,8 +33,8 @@ namespace cont {
 
 
 	public:
-		using Table = HashTable<Type, Hasher, KeyFunc, Equality>;
-
+		using Table = HashTable<Type, Key, Hasher, KeyFunc, Equality>;
+		
 		bool init(int numberOfPages, int pageSize)
 		{
 			// double buffering
@@ -77,7 +77,20 @@ namespace cont {
 			}
 		}
 
-		bool has(const Type& val)
+		void remove(const Type& val) {
+			for (int i = 0; i < m_numberOfPages; ++i) {
+				sync::lock_guard lock{ m_pageLocks[i] };
+				int activeIdx = m_activePages[i];
+				// here we only care about active pages
+				// as inactive are passed somewhere else
+				Table& t = m_pages[activeIdx];
+				if (t.erase(val)) {
+					return;
+				}
+			}
+		}
+
+		bool has(const Key& val)
 		{
 			for (int i = 0; i < m_numberOfPages; ++i) {
 				sync::lock_guard lock{ m_pageLocks[i] };
@@ -92,7 +105,7 @@ namespace cont {
 			return false;
 		}
 
-		Type* get(const Type& val)
+		Type* get(const Key& val)
 		{
 			for (int i = 0; i < m_numberOfPages; ++i) {
 				sync::lock_guard lock{ m_pageLocks[i] };
